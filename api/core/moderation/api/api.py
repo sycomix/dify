@@ -75,14 +75,15 @@ class ApiModeration(Moderation):
         extension = self._get_api_based_extension(self.tenant_id, self.config.get("api_based_extension_id"))
         requestor = APIBasedExtensionRequestor(extension.api_endpoint, decrypt_token(self.tenant_id, extension.api_key))
 
-        result = requestor.request(extension_point, params)
-        return result
+        return requestor.request(extension_point, params)
 
     @staticmethod
     def _get_api_based_extension(tenant_id: str, api_based_extension_id: str) -> APIBasedExtension:
-        extension = db.session.query(APIBasedExtension).filter(
-            APIBasedExtension.tenant_id == tenant_id,
-            APIBasedExtension.id == api_based_extension_id
-        ).first()
-
-        return extension
+        return (
+            db.session.query(APIBasedExtension)
+            .filter(
+                APIBasedExtension.tenant_id == tenant_id,
+                APIBasedExtension.id == api_based_extension_id,
+            )
+            .first()
+        )

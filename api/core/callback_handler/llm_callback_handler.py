@@ -64,22 +64,33 @@ class LLMCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         real_prompts = []
         for message in messages[0]:
-            if message.type == 'human':
-                role = 'user'
-            elif message.type == 'ai':
+            if message.type == 'ai':
                 role = 'assistant'
+            elif message.type == 'human':
+                role = 'user'
             else:
                 role = 'system'
 
-            real_prompts.append({
-                "role": role,
-                "text": message.content,
-                "files": [{
-                    "type": file.type.value,
-                    "data": file.data[:10] + '...[TRUNCATED]...' + file.data[-10:],
-                    "detail": file.detail.value if isinstance(file, ImagePromptMessageFile) else None,
-                } for file in (message.files if isinstance(message, LCHumanMessageWithFiles) else [])]
-            })
+            real_prompts.append(
+                {
+                    "role": role,
+                    "text": message.content,
+                    "files": [
+                        {
+                            "type": file.type.value,
+                            "data": f'{file.data[:10]}...[TRUNCATED]...{file.data[-10:]}',
+                            "detail": file.detail.value
+                            if isinstance(file, ImagePromptMessageFile)
+                            else None,
+                        }
+                        for file in (
+                            message.files
+                            if isinstance(message, LCHumanMessageWithFiles)
+                            else []
+                        )
+                    ],
+                }
+            )
 
         self.llm_message.prompt = real_prompts
         self.llm_message.prompt_tokens = self.model_instance.get_num_tokens(to_prompt_messages(messages[0]))
@@ -98,9 +109,11 @@ class LLMCallbackHandler(BaseCallbackHandler):
         if self.output_moderation_handler:
             self.output_moderation_handler.stop_thread()
 
-            self.llm_message.completion = self.output_moderation_handler.moderation_completion(
-                completion=response.generations[0][0].text,
-                public_event=True if self.conversation_message_task.streaming else False
+            self.llm_message.completion = (
+                self.output_moderation_handler.moderation_completion(
+                    completion=response.generations[0][0].text,
+                    public_event=bool(self.conversation_message_task.streaming),
+                )
             )
         else:
             self.llm_message.completion = response.generations[0][0].text

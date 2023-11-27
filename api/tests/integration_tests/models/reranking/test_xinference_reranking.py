@@ -54,16 +54,17 @@ def decrypt_side_effect(tenant_id, encrypted_api_key):
 def test_run(mock_decrypt, mocker):
     model = get_mock_model(mocker)
 
-    docs = []
-    docs.append(Document(
-        page_content='bye',
-        metadata={
-            "doc_id": 'a',
-            "doc_hash": 'doc_hash',
-            "document_id": 'document_id',
-            "dataset_id": 'dataset_id',
-        }
-    ))
+    docs = [
+        Document(
+            page_content='bye',
+            metadata={
+                "doc_id": 'a',
+                "doc_hash": 'doc_hash',
+                "document_id": 'document_id',
+                "dataset_id": 'dataset_id',
+            },
+        )
+    ]
     docs.append(Document(
         page_content='hello',
         metadata={

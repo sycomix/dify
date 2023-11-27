@@ -79,7 +79,11 @@ class AgentExecutor:
                 verbose=True
             )
         elif self.configuration.strategy == PlanningStrategy.ROUTER:
-            self.configuration.tools = [t for t in self.configuration.tools if isinstance(t, DatasetRetrieverTool) or isinstance(t, DatasetMultiRetrieverTool)]
+            self.configuration.tools = [
+                t
+                for t in self.configuration.tools
+                if isinstance(t, (DatasetRetrieverTool, DatasetMultiRetrieverTool))
+            ]
             agent = MultiDatasetRouterAgent.from_llm_and_tools(
                 model_instance=self.configuration.model_instance,
                 tools=self.configuration.tools,
@@ -87,7 +91,11 @@ class AgentExecutor:
                 verbose=True
             )
         elif self.configuration.strategy == PlanningStrategy.REACT_ROUTER:
-            self.configuration.tools = [t for t in self.configuration.tools if isinstance(t, DatasetRetrieverTool) or isinstance(t, DatasetMultiRetrieverTool)]
+            self.configuration.tools = [
+                t
+                for t in self.configuration.tools
+                if isinstance(t, (DatasetRetrieverTool, DatasetMultiRetrieverTool))
+            ]
             agent = StructuredMultiDatasetRouterAgent.from_llm_and_tools(
                 model_instance=self.configuration.model_instance,
                 tools=self.configuration.tools,

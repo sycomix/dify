@@ -56,9 +56,9 @@ class ApiExternalDataTool(ExternalDataTool):
         ).first()
 
         if not api_based_extension:
-            raise ValueError("[External data tool] API query failed, variable: {}, "
-                             "error: api_based_extension_id is invalid"
-                             .format(self.config.get('variable')))
+            raise ValueError(
+                f"[External data tool] API query failed, variable: {self.config.get('variable')}, error: api_based_extension_id is invalid"
+            )
 
         # decrypt api_key
         api_key = encrypter.decrypt_token(
@@ -73,10 +73,9 @@ class ApiExternalDataTool(ExternalDataTool):
                 api_key=api_key
             )
         except Exception as e:
-            raise ValueError("[External data tool] API query failed, variable: {}, error: {}".format(
-                self.config.get('variable'),
-                e
-            ))
+            raise ValueError(
+                f"[External data tool] API query failed, variable: {self.config.get('variable')}, error: {e}"
+            )
 
         response_json = requestor.request(point=APIBasedExtensionPoint.APP_EXTERNAL_DATA_TOOL_QUERY, params={
             'app_id': self.app_id,
@@ -86,7 +85,8 @@ class ApiExternalDataTool(ExternalDataTool):
         })
 
         if 'result' not in response_json:
-            raise ValueError("[External data tool] API query failed, variable: {}, error: result not found in response"
-                             .format(self.config.get('variable')))
+            raise ValueError(
+                f"[External data tool] API query failed, variable: {self.config.get('variable')}, error: result not found in response"
+            )
 
         return response_json['result']

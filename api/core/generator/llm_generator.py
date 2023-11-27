@@ -20,7 +20,7 @@ class LLMGenerator:
         prompt = CONVERSATION_TITLE_PROMPT
 
         if len(query) > 2000:
-            query = query[:300] + "...[TRUNCATED]..." + query[-300:]
+            query = f"{query[:300]}...[TRUNCATED]...{query[-300:]}"
 
         query = query.replace("\n", " ")
 
@@ -43,7 +43,7 @@ class LLMGenerator:
         name = answer.strip()
 
         if len(name) > 75:
-            name = name[:75] + '...'
+            name = f'{name[:75]}...'
 
         return name
 

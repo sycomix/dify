@@ -56,23 +56,20 @@ class APIBasedExtensionService:
         if not extension_data.id:
             # case one: check new data, name must be unique
             is_name_existed = db.session.query(APIBasedExtension) \
-                .filter_by(tenant_id=extension_data.tenant_id) \
-                .filter_by(name=extension_data.name) \
-                .first()
+                    .filter_by(tenant_id=extension_data.tenant_id) \
+                    .filter_by(name=extension_data.name) \
+                    .first()
 
-            if is_name_existed:
-                raise ValueError("name must be unique, it is already existed")
         else:
             # case two: check existing data, name must be unique
             is_name_existed = db.session.query(APIBasedExtension) \
-                .filter_by(tenant_id=extension_data.tenant_id) \
-                .filter_by(name=extension_data.name) \
-                .filter(APIBasedExtension.id != extension_data.id) \
-                .first()
+                    .filter_by(tenant_id=extension_data.tenant_id) \
+                    .filter_by(name=extension_data.name) \
+                    .filter(APIBasedExtension.id != extension_data.id) \
+                    .first()
 
-            if is_name_existed:
-                raise ValueError("name must be unique, it is already existed")
-
+        if is_name_existed:
+            raise ValueError("name must be unique, it is already existed")
         # api_endpoint
         if not extension_data.api_endpoint:
             raise ValueError("api_endpoint must not be empty")
@@ -95,4 +92,4 @@ class APIBasedExtensionService:
             if resp.get('result') != 'pong':
                 raise ValueError(resp)
         except Exception as e:
-            raise ValueError("connection error: {}".format(e))
+            raise ValueError(f"connection error: {e}")

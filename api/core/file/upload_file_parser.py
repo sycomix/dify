@@ -24,16 +24,15 @@ class UploadFileParser:
 
         if current_app.config['MULTIMODAL_SEND_IMAGE_FORMAT'] == 'url' or force_url:
             return cls.get_signed_temp_image_url(upload_file)
-        else:
-            # get image file base64
-            try:
-                data = storage.load(upload_file.key)
-            except FileNotFoundError:
-                logging.error(f'File not found: {upload_file.key}')
-                return None
+        # get image file base64
+        try:
+            data = storage.load(upload_file.key)
+        except FileNotFoundError:
+            logging.error(f'File not found: {upload_file.key}')
+            return None
 
-            encoded_string = base64.b64encode(data).decode('utf-8')
-            return f'data:{upload_file.mime_type};base64,{encoded_string}'
+        encoded_string = base64.b64encode(data).decode('utf-8')
+        return f'data:{upload_file.mime_type};base64,{encoded_string}'
 
     @classmethod
     def get_signed_temp_image_url(cls, upload_file) -> str:

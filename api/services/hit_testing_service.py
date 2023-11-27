@@ -58,7 +58,10 @@ class HitTestingService:
         threads = []
 
         # retrieval_model source with semantic
-        if retrieval_model['search_method'] == 'semantic_search' or retrieval_model['search_method'] == 'hybrid_search':
+        if retrieval_model['search_method'] in [
+            'semantic_search',
+            'hybrid_search',
+        ]:
             embedding_thread = threading.Thread(target=RetrievalService.embedding_search, kwargs={
                 'flask_app': current_app._get_current_object(),
                 'dataset_id': str(dataset.id),
@@ -74,7 +77,10 @@ class HitTestingService:
             embedding_thread.start()
 
         # retrieval source with full text
-        if retrieval_model['search_method'] == 'full_text_search' or retrieval_model['search_method'] == 'hybrid_search':
+        if retrieval_model['search_method'] in [
+            'full_text_search',
+            'hybrid_search',
+        ]:
             full_text_index_thread = threading.Thread(target=RetrievalService.full_text_index_search, kwargs={
                 'flask_app': current_app._get_current_object(),
                 'dataset_id': str(dataset.id),
@@ -180,11 +186,10 @@ class HitTestingService:
         tsne = TSNE(n_components=2, perplexity=perplexity, early_exaggeration=12.0)
         data_tsne = tsne.fit_transform(concatenate_data)
 
-        tsne_position_data = []
-        for i in range(len(data_tsne)):
-            tsne_position_data.append({'x': float(data_tsne[i][0]), 'y': float(data_tsne[i][1])})
-
-        return tsne_position_data
+        return [
+            {'x': float(data_tsne[i][0]), 'y': float(data_tsne[i][1])}
+            for i in range(len(data_tsne))
+        ]
 
     @classmethod
     def hit_testing_args_check(cls, args):

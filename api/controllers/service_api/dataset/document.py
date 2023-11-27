@@ -149,9 +149,7 @@ class DocumentAddByFileApi(DatasetApiResource):
     """Resource for documents."""
     def post(self, tenant_id, dataset_id):
         """Create document by upload file."""
-        args = {}
-        if 'data' in request.form:
-            args = json.loads(request.form['data'])
+        args = json.loads(request.form['data']) if 'data' in request.form else {}
         if 'doc_form' not in args:
             args['doc_form'] = 'text_model'
         if 'doc_language' not in args:
@@ -214,9 +212,7 @@ class DocumentUpdateByFileApi(DatasetApiResource):
 
     def post(self, tenant_id, dataset_id, document_id):
         """Update document by upload file."""
-        args = {}
-        if 'data' in request.form:
-            args = json.loads(request.form['data'])
+        args = json.loads(request.form['data']) if 'data' in request.form else {}
         if 'doc_form' not in args:
             args['doc_form'] = 'text_model'
         if 'doc_language' not in args:
@@ -321,8 +317,7 @@ class DocumentListApi(DatasetApiResource):
         if not dataset:
             raise NotFound('Dataset not found.')
 
-        query = Document.query.filter_by(
-            dataset_id=str(dataset_id), tenant_id=tenant_id)
+        query = Document.query.filter_by(dataset_id=dataset_id, tenant_id=tenant_id)
 
         if search:
             search = f'%{search}%'
@@ -334,15 +329,13 @@ class DocumentListApi(DatasetApiResource):
             page=page, per_page=limit, max_per_page=100, error_out=False)
         documents = paginated_documents.items
 
-        response = {
+        return {
             'data': marshal(documents, document_fields),
             'has_more': len(documents) == limit,
             'limit': limit,
             'total': paginated_documents.total,
-            'page': page
+            'page': page,
         }
-
-        return response
 
 
 class DocumentIndexingStatusApi(DatasetApiResource):
@@ -373,10 +366,7 @@ class DocumentIndexingStatusApi(DatasetApiResource):
             if document.is_paused:
                 document.indexing_status = 'paused'
             documents_status.append(marshal(document, document_status_fields))
-        data = {
-            'data': documents_status
-        }
-        return data
+        return {'data': documents_status}
 
 
 api.add_resource(DocumentAddByTextApi, '/datasets/<uuid:dataset_id>/document/create_by_text')

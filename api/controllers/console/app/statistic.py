@@ -66,12 +66,10 @@ class DailyConversationStatistic(Resource):
 
         with db.engine.begin() as conn:
             rs = conn.execute(db.text(sql_query), arg_dict)
-            for i in rs:
-                response_data.append({
-                    'date': str(i.date),
-                    'conversation_count': i.conversation_count
-                })
-
+            response_data.extend(
+                {'date': str(i.date), 'conversation_count': i.conversation_count}
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })
@@ -126,13 +124,11 @@ class DailyTerminalsStatistic(Resource):
         response_data = []
 
         with db.engine.begin() as conn:
-            rs = conn.execute(db.text(sql_query), arg_dict)            
-            for i in rs:
-                response_data.append({
-                    'date': str(i.date),
-                    'terminal_count': i.terminal_count
-                })
-
+            rs = conn.execute(db.text(sql_query), arg_dict)
+            response_data.extend(
+                {'date': str(i.date), 'terminal_count': i.terminal_count}
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })
@@ -189,14 +185,15 @@ class DailyTokenCostStatistic(Resource):
 
         with db.engine.begin() as conn:
             rs = conn.execute(db.text(sql_query), arg_dict)
-            for i in rs:
-                response_data.append({
+            response_data.extend(
+                {
                     'date': str(i.date),
                     'token_count': i.token_count,
                     'total_price': i.total_price,
-                    'currency': 'USD'
-                })
-
+                    'currency': 'USD',
+                }
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })
@@ -254,15 +251,18 @@ GROUP BY date
 ORDER BY date"""
 
         response_data = []
-        
+
         with db.engine.begin() as conn:
             rs = conn.execute(db.text(sql_query), arg_dict)
-            for i in rs:
-                response_data.append({
+            response_data.extend(
+                {
                     'date': str(i.date),
-                    'interactions': float(i.interactions.quantize(Decimal('0.01')))
-                })
-
+                    'interactions': float(
+                        i.interactions.quantize(Decimal('0.01'))
+                    ),
+                }
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })
@@ -320,12 +320,18 @@ class UserSatisfactionRateStatistic(Resource):
 
         with db.engine.begin() as conn:
             rs = conn.execute(db.text(sql_query), arg_dict)
-            for i in rs:
-                response_data.append({
+            response_data.extend(
+                {
                     'date': str(i.date),
-                    'rate': round((i.feedback_count * 1000 / i.message_count) if i.message_count > 0 else 0, 2),
-                })
-
+                    'rate': round(
+                        (i.feedback_count * 1000 / i.message_count)
+                        if i.message_count > 0
+                        else 0,
+                        2,
+                    ),
+                }
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })
@@ -381,13 +387,11 @@ class AverageResponseTimeStatistic(Resource):
         response_data = []
 
         with db.engine.begin() as conn:
-            rs = conn.execute(db.text(sql_query), arg_dict)            
-            for i in rs:
-                response_data.append({
-                    'date': str(i.date),
-                    'latency': round(i.latency * 1000, 4)
-                })
-
+            rs = conn.execute(db.text(sql_query), arg_dict)
+            response_data.extend(
+                {'date': str(i.date), 'latency': round(i.latency * 1000, 4)}
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })
@@ -445,12 +449,10 @@ WHERE app_id = :app_id'''
 
         with db.engine.begin() as conn:
             rs = conn.execute(db.text(sql_query), arg_dict)
-            for i in rs:
-                response_data.append({
-                    'date': str(i.date),
-                    'tps': round(i.tokens_per_second, 4)
-                })
-
+            response_data.extend(
+                {'date': str(i.date), 'tps': round(i.tokens_per_second, 4)}
+                for i in rs
+            )
         return jsonify({
             'data': response_data
         })

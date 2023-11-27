@@ -23,7 +23,7 @@ class APIBasedExtensionRequestor:
         """
         headers = {
             "Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(self.api_key)
+            "Authorization": f"Bearer {self.api_key}",
         }
 
         url = self.api_endpoint
@@ -54,9 +54,8 @@ class APIBasedExtensionRequestor:
             raise ValueError("request connection error")
 
         if response.status_code != 200:
-            raise ValueError("request error, status_code: {}, content: {}".format(
-                response.status_code,
-                response.text[:100]
-            ))
+            raise ValueError(
+                f"request error, status_code: {response.status_code}, content: {response.text[:100]}"
+            )
 
         return response.json()

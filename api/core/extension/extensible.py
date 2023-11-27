@@ -64,12 +64,12 @@ class Extensible:
                         with open(builtin_file_path, 'r') as f:
                             position = int(f.read().strip())
 
-                if (extension_name + '.py') not in file_names:
+                if f'{extension_name}.py' not in file_names:
                     logging.warning(f"Missing {extension_name}.py file in {subdir_path}, Skip.")
                     continue
 
                 # Dynamic loading {subdir_name}.py file and find the subclass of Extensible
-                py_path = os.path.join(subdir_path, extension_name + '.py')
+                py_path = os.path.join(subdir_path, f'{extension_name}.py')
                 spec = importlib.util.spec_from_file_location(extension_name, py_path)
                 mod = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(mod)
@@ -106,6 +106,4 @@ class Extensible:
                 )
 
         sorted_items = sorted(extensions.items(), key=lambda x: (x[1].position is None, x[1].position))
-        sorted_extensions = OrderedDict(sorted_items)
-
-        return sorted_extensions
+        return OrderedDict(sorted_items)

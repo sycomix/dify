@@ -58,21 +58,15 @@ class DatasetListApi(Resource):
         provider_service = ProviderService()
         valid_model_list = provider_service.get_valid_model_list(current_user.current_tenant_id,
                                                                  ModelType.EMBEDDINGS.value)
-        # if len(valid_model_list) == 0:
-        #     raise ProviderNotInitializeError(
-        #         f"No Embedding Model available. Please configure a valid provider "
-        #         f"in the Settings -> Model Provider.")
-        model_names = []
-        for valid_model in valid_model_list:
-            model_names.append(f"{valid_model['model_name']}:{valid_model['model_provider']['provider_name']}")
+        model_names = [
+            f"{valid_model['model_name']}:{valid_model['model_provider']['provider_name']}"
+            for valid_model in valid_model_list
+        ]
         data = marshal(datasets, dataset_detail_fields)
         for item in data:
             if item['indexing_technique'] == 'high_quality':
                 item_model = f"{item['embedding_model']}:{item['embedding_model_provider']}"
-                if item_model in model_names:
-                    item['embedding_available'] = True
-                else:
-                    item['embedding_available'] = False
+                item['embedding_available'] = item_model in model_names
             else:
                 item['embedding_available'] = True
         response = {
@@ -134,15 +128,13 @@ class DatasetApi(Resource):
         # get valid model list
         valid_model_list = provider_service.get_valid_model_list(current_user.current_tenant_id,
                                                                  ModelType.EMBEDDINGS.value)
-        model_names = []
-        for valid_model in valid_model_list:
-            model_names.append(f"{valid_model['model_name']}:{valid_model['model_provider']['provider_name']}")
+        model_names = [
+            f"{valid_model['model_name']}:{valid_model['model_provider']['provider_name']}"
+            for valid_model in valid_model_list
+        ]
         if data['indexing_technique'] == 'high_quality':
             item_model = f"{data['embedding_model']}:{data['embedding_model_provider']}"
-            if item_model in model_names:
-                data['embedding_available'] = True
-            else:
-                data['embedding_available'] = False
+            data['embedding_available'] = item_model in model_names
         else:
             data['embedding_available'] = True
         return data, 200
@@ -272,8 +264,8 @@ class DatasetIndexingEstimateApi(Resource):
                                                                   args['indexing_technique'])
             except LLMBadRequestError:
                 raise ProviderNotInitializeError(
-                    f"No Embedding Model available. Please configure a valid provider "
-                    f"in the Settings -> Model Provider.")
+                    'No Embedding Model available. Please configure a valid provider in the Settings -> Model Provider.'
+                )
             except ProviderTokenNotInitError as ex:
                 raise ProviderNotInitializeError(ex.description)
         elif args['info_list']['data_source_type'] == 'notion_import':
@@ -288,8 +280,8 @@ class DatasetIndexingEstimateApi(Resource):
                                                                     args['indexing_technique'])
             except LLMBadRequestError:
                 raise ProviderNotInitializeError(
-                    f"No Embedding Model available. Please configure a valid provider "
-                    f"in the Settings -> Model Provider.")
+                    'No Embedding Model available. Please configure a valid provider in the Settings -> Model Provider.'
+                )
             except ProviderTokenNotInitError as ex:
                 raise ProviderNotInitializeError(ex.description)
         else:
@@ -318,8 +310,7 @@ class DatasetRelatedAppListApi(Resource):
 
         related_apps = []
         for app_dataset_join in app_dataset_joins:
-            app_model = app_dataset_join.app
-            if app_model:
+            if app_model := app_dataset_join.app:
                 related_apps.append(app_model)
 
         return {
@@ -349,10 +340,7 @@ class DatasetIndexingStatusApi(Resource):
             document.completed_segments = completed_segments
             document.total_segments = total_segments
             documents_status.append(marshal(document, document_status_fields))
-        data = {
-            'data': documents_status
-        }
-        return data
+        return {'data': documents_status}
 
 
 class DatasetApiKeyApi(Resource):
@@ -450,7 +438,7 @@ class DatasetRetrievalSettingApi(Resource):
                     'semantic_search'
                 ]
             }
-        elif vector_type == 'qdrant' or vector_type == 'weaviate':
+        elif vector_type in ['qdrant', 'weaviate']:
             return {
                 'retrieval_method': [
                     'semantic_search', 'full_text_search', 'hybrid_search'
@@ -472,7 +460,7 @@ class DatasetRetrievalSettingMockApi(Resource):
                     'semantic_search'
                 ]
             }
-        elif vector_type == 'qdrant' or vector_type == 'weaviate':
+        elif vector_type in ['qdrant', 'weaviate']:
             return {
                 'retrieval_method': [
                     'semantic_search', 'full_text_search', 'hybrid_search'

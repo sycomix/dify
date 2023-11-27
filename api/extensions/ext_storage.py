@@ -38,7 +38,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             folder = os.path.dirname(filename)
             os.makedirs(folder, exist_ok=True)
@@ -47,10 +47,7 @@ class Storage:
                 f.write(data)
 
     def load(self, filename: str, stream: bool = False) -> Union[bytes, Generator]:
-        if stream:
-            return self.load_stream(filename)
-        else:
-            return self.load_once(filename)
+        return self.load_stream(filename) if stream else self.load_once(filename)
 
     def load_once(self, filename: str) -> bytes:
         if self.storage_type == 's3':
@@ -66,7 +63,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             if not os.path.exists(filename):
                 raise FileNotFoundError("File not found")
@@ -82,8 +79,7 @@ class Storage:
                 try:
                     with closing(self.client) as client:
                         response = client.get_object(Bucket=self.bucket_name, Key=filename)
-                        for chunk in response['Body'].iter_chunks():
-                            yield chunk
+                        yield from response['Body'].iter_chunks()
                 except ClientError as ex:
                     if ex.response['Error']['Code'] == 'NoSuchKey':
                         raise FileNotFoundError("File not found")
@@ -93,7 +89,7 @@ class Storage:
                 if not self.folder or self.folder.endswith('/'):
                     filename = self.folder + filename
                 else:
-                    filename = self.folder + '/' + filename
+                    filename = f'{self.folder}/{filename}'
 
                 if not os.path.exists(filename):
                     raise FileNotFoundError("File not found")
@@ -112,7 +108,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             if not os.path.exists(filename):
                 raise FileNotFoundError("File not found")
@@ -131,7 +127,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             return os.path.exists(filename)
 

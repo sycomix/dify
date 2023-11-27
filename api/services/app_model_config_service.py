@@ -20,13 +20,7 @@ class AppModelConfigService:
         # verify if the dataset ID exists
         dataset = DatasetService.get_dataset(dataset_id)
 
-        if not dataset:
-            return False
-
-        if dataset.tenant_id != account.current_tenant_id:
-            return False
-
-        return True
+        return False if not dataset else dataset.tenant_id == account.current_tenant_id
 
     @classmethod
     def validate_model_completion_params(cls, cp: dict, model_name: str) -> dict:
@@ -63,17 +57,14 @@ class AppModelConfigService:
         if len(cp["stop"]) > 4:
             raise ValueError("stop sequences must be less than 4")
 
-        # Filter out extra parameters
-        filtered_cp = {
+        return {
             "max_tokens": cp["max_tokens"],
             "temperature": cp["temperature"],
             "top_p": cp["top_p"],
             "presence_penalty": cp["presence_penalty"],
             "frequency_penalty": cp["frequency_penalty"],
-            "stop": cp["stop"]
+            "stop": cp["stop"],
         }
-
-        return filtered_cp
 
     @classmethod
     def validate_configuration(cls, tenant_id: str, account: Account, config: dict, mode: str) -> dict:
@@ -240,7 +231,7 @@ class AppModelConfigService:
                     raise ValueError("options in user_input_form must be a list of strings")
 
                 if "default" in form_item and form_item['default'] \
-                        and form_item["default"] not in form_item["options"]:
+                            and form_item["default"] not in form_item["options"]:
                     raise ValueError("default value in user_input_form must be in the options list")
 
         # pre_prompt
@@ -318,11 +309,12 @@ class AppModelConfigService:
         # file upload validation
         cls.is_file_upload_valid(config)
 
-        # Filter out extra parameters
-        filtered_config = {
+        return {
             "opening_statement": config["opening_statement"],
             "suggested_questions": config["suggested_questions"],
-            "suggested_questions_after_answer": config["suggested_questions_after_answer"],
+            "suggested_questions_after_answer": config[
+                "suggested_questions_after_answer"
+            ],
             "speech_to_text": config["speech_to_text"],
             "retriever_resource": config["retriever_resource"],
             "more_like_this": config["more_like_this"],
@@ -332,7 +324,7 @@ class AppModelConfigService:
                 "provider": config["model"]["provider"],
                 "name": config["model"]["name"],
                 "mode": config['model']["mode"],
-                "completion_params": config["model"]["completion_params"]
+                "completion_params": config["model"]["completion_params"],
             },
             "user_input_form": config["user_input_form"],
             "dataset_query_variable": config.get('dataset_query_variable'),
@@ -342,10 +334,8 @@ class AppModelConfigService:
             "chat_prompt_config": config["chat_prompt_config"],
             "completion_prompt_config": config["completion_prompt_config"],
             "dataset_configs": config["dataset_configs"],
-            "file_upload": config["file_upload"]
+            "file_upload": config["file_upload"],
         }
-
-        return filtered_config
 
     @classmethod
     def is_moderation_valid(cls, tenant_id: str, config: dict):

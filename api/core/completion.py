@@ -110,9 +110,7 @@ class Completion:
                 )
                 return
 
-            # fill in variable inputs from external data tools if exists
-            external_data_tools = app_model_config.external_data_tools_list
-            if external_data_tools:
+            if external_data_tools := app_model_config.external_data_tools_list:
                 inputs = cls.fill_in_inputs_from_external_data_tools(
                     tenant_id=app.tenant_id,
                     app_id=app.id,
@@ -136,15 +134,16 @@ class Completion:
             # run agent executor
             agent_execute_result = None
             if query_for_agent and agent_executor:
-                should_use_agent = agent_executor.should_use_agent(query_for_agent)
-                if should_use_agent:
+                if should_use_agent := agent_executor.should_use_agent(
+                    query_for_agent
+                ):
                     agent_execute_result = agent_executor.run(query_for_agent)
 
             # When no extra pre prompt is specified,
             # the output of the agent can be used directly as the main output content without calling LLM again
             fake_response = None
             if not app_model_config.pre_prompt and agent_execute_result and agent_execute_result.output \
-                    and agent_execute_result.strategy not in [PlanningStrategy.ROUTER,
+                        and agent_execute_result.strategy not in [PlanningStrategy.ROUTER,
                                                               PlanningStrategy.REACT_ROUTER]:
                 fake_response = agent_execute_result.output
 
@@ -307,13 +306,14 @@ class Completion:
             prompt_messages=prompt_messages,
         )
 
-        response = model_instance.run(
+        return model_instance.run(
             messages=prompt_messages,
             stop=stop_words if stop_words else None,
-            callbacks=[LLMCallbackHandler(model_instance, conversation_message_task)],
-            fake_response=fake_response
+            callbacks=[
+                LLMCallbackHandler(model_instance, conversation_message_task)
+            ],
+            fake_response=fake_response,
         )
-        return response
 
     @classmethod
     def get_history_messages_from_memory(cls, memory: ReadOnlyConversationTokenDBBufferSharedMemory,
@@ -334,8 +334,7 @@ class Completion:
             model_config=app_model_config.model_dict
         )
 
-        # use llm config from conversation
-        memory = ReadOnlyConversationTokenDBBufferSharedMemory(
+        return ReadOnlyConversationTokenDBBufferSharedMemory(
             conversation=conversation,
             model_instance=memory_model_instance,
             max_token_limit=kwargs.get("max_token_limit", 2048),
@@ -345,8 +344,6 @@ class Completion:
             output_key=kwargs.get("output_key", "output"),
             message_limit=kwargs.get("message_limit", 10),
         )
-
-        return memory
 
     @classmethod
     def get_validate_rest_tokens(cls, mode: str, model_instance: BaseLLM, app_model_config: AppModelConfig,

@@ -57,21 +57,20 @@ class FileExtractor:
             #     file_path=filenames[0],
             #     api_key="FAKE_API_KEY",
             # )
+        elif file_extension == '.xlsx':
+            loader = ExcelLoader(file_path)
+        elif file_extension == '.pdf':
+            loader = PdfLoader(file_path, upload_file=upload_file)
+        elif file_extension in {'.md', '.markdown'}:
+            loader = MarkdownLoader(file_path, autodetect_encoding=True)
+        elif file_extension in {'.htm', '.html'}:
+            loader = HTMLLoader(file_path)
+        elif file_extension == '.docx':
+            loader = Docx2txtLoader(file_path)
+        elif file_extension == '.csv':
+            loader = CSVLoader(file_path, autodetect_encoding=True)
         else:
-            if file_extension == '.xlsx':
-                loader = ExcelLoader(file_path)
-            elif file_extension == '.pdf':
-                loader = PdfLoader(file_path, upload_file=upload_file)
-            elif file_extension in ['.md', '.markdown']:
-                loader = MarkdownLoader(file_path, autodetect_encoding=True)
-            elif file_extension in ['.htm', '.html']:
-                loader = HTMLLoader(file_path)
-            elif file_extension == '.docx':
-                loader = Docx2txtLoader(file_path)
-            elif file_extension == '.csv':
-                loader = CSVLoader(file_path, autodetect_encoding=True)
-            else:
-                # txt
-                loader = TextLoader(file_path, autodetect_encoding=True)
+            # txt
+            loader = TextLoader(file_path, autodetect_encoding=True)
 
         return delimiter.join([document.page_content for document in loader.load()]) if return_text else loader.load()

@@ -80,15 +80,21 @@ def to_lc_messages(messages: list[PromptMessage]):
 def to_prompt_messages(messages: list[BaseMessage]):
     prompt_messages = []
     for message in messages:
-        if isinstance(message, HumanMessage):
-            if isinstance(message, LCHumanMessageWithFiles):
-                prompt_messages.append(PromptMessage(
-                    content=message.content,
-                    type=MessageType.USER,
-                    files=message.files
-                ))
-            else:
-                prompt_messages.append(PromptMessage(content=message.content, type=MessageType.USER))
+        if isinstance(message, HumanMessage) and isinstance(
+            message, LCHumanMessageWithFiles
+        ):
+            prompt_messages.append(PromptMessage(
+                content=message.content,
+                type=MessageType.USER,
+                files=message.files
+            ))
+        elif (
+            isinstance(message, HumanMessage)
+            or not isinstance(message, AIMessage)
+            and not isinstance(message, SystemMessage)
+            and isinstance(message, FunctionMessage)
+        ):
+            prompt_messages.append(PromptMessage(content=message.content, type=MessageType.USER))
         elif isinstance(message, AIMessage):
             message_kwargs = {
                 'content': message.content,
@@ -101,13 +107,8 @@ def to_prompt_messages(messages: list[BaseMessage]):
             prompt_messages.append(PromptMessage(**message_kwargs))
         elif isinstance(message, SystemMessage):
             prompt_messages.append(PromptMessage(content=message.content, type=MessageType.SYSTEM))
-        elif isinstance(message, FunctionMessage):
-            prompt_messages.append(PromptMessage(content=message.content, type=MessageType.USER))
     return prompt_messages
 
 
 def str_to_prompt_messages(texts: list[str]):
-    prompt_messages = []
-    for text in texts:
-        prompt_messages.append(PromptMessage(content=text))
-    return prompt_messages
+    return [PromptMessage(content=text) for text in texts]
