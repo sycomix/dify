@@ -60,7 +60,6 @@ class OrchestratorRuleParser:
         model_dict = self.app_model_config.model_dict
         return_resource = self.app_model_config.retriever_resource_dict.get('enabled', False)
 
-        chain = None
         if agent_mode_config and agent_mode_config.get('enabled'):
             tool_configs = agent_mode_config.get('tools', [])
             agent_provider_name = model_dict.get('provider', 'openai')
@@ -139,7 +138,7 @@ class OrchestratorRuleParser:
 
             return AgentExecutor(agent_configuration)
 
-        return chain
+        return None
 
     def to_tools(self, tool_configs: list, callbacks: Callbacks = None,  **kwargs) -> list[BaseTool]:
         """
@@ -176,16 +175,16 @@ class OrchestratorRuleParser:
                     tool.callbacks = callbacks
                 tools.append(tool)
         # format dataset tool
-        if len(dataset_tools) > 0:
-            dataset_retriever_tools = self.to_dataset_retriever_tool(tool_configs=dataset_tools, **kwargs)
-            if dataset_retriever_tools:
+        if dataset_tools:
+            if dataset_retriever_tools := self.to_dataset_retriever_tool(
+                tool_configs=dataset_tools, **kwargs
+            ):
                 tools.extend(dataset_retriever_tools)
         return tools
 
     def to_dataset_retriever_tool(self, tool_configs: List, conversation_message_task: ConversationMessageTask,
                                   return_resource: bool = False, retriever_from: str = 'dev',
-                                  **kwargs) \
-            -> Optional[List[BaseTool]]:
+                                  **kwargs) -> Optional[List[BaseTool]]:
         """
         A dataset tool is a tool that can be used to retrieve information from a dataset
         :param tool_configs:
@@ -209,7 +208,7 @@ class OrchestratorRuleParser:
             if not dataset:
                 continue
 
-            if dataset and dataset.available_document_count == 0 and dataset.available_document_count == 0:
+            if dataset.available_document_count == 0:
                 continue
             dataset_ids.append(dataset.id)
             if retrieval_model == 'single':
@@ -220,8 +219,9 @@ class OrchestratorRuleParser:
                 # top_k = self._dynamic_calc_retrieve_k(dataset=dataset, top_k=top_k, rest_tokens=rest_tokens)
 
                 score_threshold = None
-                score_threshold_enable = retrieval_model_config.get("score_threshold_enable")
-                if score_threshold_enable:
+                if score_threshold_enable := retrieval_model_config.get(
+                    "score_threshold_enable"
+                ):
                     score_threshold = retrieval_model_config.get("score_threshold")
 
                 tool = DatasetRetrieverTool.from_dataset(
@@ -271,36 +271,31 @@ class OrchestratorRuleParser:
         except ProviderTokenNotInitError:
             summary_model_instance = None
 
-        tool = WebReaderTool(
-            model_instance=summary_model_instance if summary_model_instance else None,
+        return WebReaderTool(
+            model_instance=summary_model_instance
+            if summary_model_instance
+            else None,
             max_chunk_length=4000,
-            continue_reading=True
+            continue_reading=True,
         )
-
-        return tool
 
     def to_google_search_tool(self, tool_config: dict, **kwargs) -> Optional[BaseTool]:
         tool_provider = SerpAPIToolProvider(tenant_id=self.tenant_id)
-        func_kwargs = tool_provider.credentials_to_func_kwargs()
-        if not func_kwargs:
+        if func_kwargs := tool_provider.credentials_to_func_kwargs():
+            return Tool(
+                name="google_search",
+                description="A tool for performing a Google search and extracting snippets and webpages "
+                "when you need to search for something you don't know or when your information "
+                "is not up to date. "
+                "Input should be a search query.",
+                func=OptimizedSerpAPIWrapper(**func_kwargs).run,
+                args_schema=OptimizedSerpAPIInput,
+            )
+        else:
             return None
 
-        tool = Tool(
-            name="google_search",
-            description="A tool for performing a Google search and extracting snippets and webpages "
-                        "when you need to search for something you don't know or when your information "
-                        "is not up to date. "
-                        "Input should be a search query.",
-            func=OptimizedSerpAPIWrapper(**func_kwargs).run,
-            args_schema=OptimizedSerpAPIInput
-        )
-
-        return tool
-
     def to_current_datetime_tool(self, tool_config: dict, **kwargs) -> Optional[BaseTool]:
-        tool = DatetimeTool()
-
-        return tool
+        return DatetimeTool()
 
     def to_wikipedia_tool(self, tool_config: dict, **kwargs) -> Optional[BaseTool]:
         class WikipediaInput(BaseModel):

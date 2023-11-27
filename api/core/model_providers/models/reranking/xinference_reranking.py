@@ -33,7 +33,7 @@ class XinferenceReranking(BaseReranking):
         response = model.rerank(query=query, documents=docs, top_n=top_k)
         rerank_documents = []
 
-        for idx, result in enumerate(response['results']):
+        for result in response['results']:
             # format document
             index = result['index']
             rerank_document = Document(
@@ -47,10 +47,11 @@ class XinferenceReranking(BaseReranking):
                 }
             )
             # score threshold check
-            if score_threshold is not None:
-                if result.relevance_score >= score_threshold:
-                    rerank_documents.append(rerank_document)
-            else:
+            if (
+                score_threshold is not None
+                and result.relevance_score >= score_threshold
+                or score_threshold is None
+            ):
                 rerank_documents.append(rerank_document)
         return rerank_documents
 

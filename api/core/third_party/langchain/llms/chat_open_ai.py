@@ -95,11 +95,11 @@ class EnhanceChatOpenAI(ChatOpenAI):
                 #  which need to download the image and then get the resolution for calculation,
                 #  and will increase the request delay
                 if isinstance(value, list):
-                    text = ''
-                    for item in value:
-                        if isinstance(item, dict) and item['type'] == 'text':
-                            text += item['text']
-
+                    text = ''.join(
+                        item['text']
+                        for item in value
+                        if isinstance(item, dict) and item['type'] == 'text'
+                    )
                     value = text
                 num_tokens += len(encoding.encode(str(value)))
                 if key == "name":

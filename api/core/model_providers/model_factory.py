@@ -67,9 +67,9 @@ class ModelFactory:
             default_model = cls.get_default_model(tenant_id, ModelType.TEXT_GENERATION)
 
             if not default_model:
-                raise LLMBadRequestError(f"Default model is not available. "
-                                         f"Please configure a Default System Reasoning Model "
-                                         f"in the Settings -> Model Provider.")
+                raise LLMBadRequestError(
+                    'Default model is not available. Please configure a Default System Reasoning Model in the Settings -> Model Provider.'
+                )
 
             model_provider_name = default_model.provider_name
             model_name = default_model.model_name
@@ -121,9 +121,9 @@ class ModelFactory:
             default_model = cls.get_default_model(tenant_id, ModelType.EMBEDDINGS)
 
             if not default_model:
-                raise LLMBadRequestError(f"Default model is not available. "
-                                         f"Please configure a Default Embedding Model "
-                                         f"in the Settings -> Model Provider.")
+                raise LLMBadRequestError(
+                    'Default model is not available. Please configure a Default Embedding Model in the Settings -> Model Provider.'
+                )
 
             model_provider_name = default_model.provider_name
             model_name = default_model.model_name
@@ -159,9 +159,9 @@ class ModelFactory:
             default_model = cls.get_default_model(tenant_id, ModelType.RERANKING)
 
             if not default_model:
-                raise LLMBadRequestError(f"Default model is not available. "
-                                         f"Please configure a Default Reranking Model "
-                                         f"in the Settings -> Model Provider.")
+                raise LLMBadRequestError(
+                    'Default model is not available. Please configure a Default Reranking Model in the Settings -> Model Provider.'
+                )
 
             model_provider_name = default_model.provider_name
             model_name = default_model.model_name
@@ -196,9 +196,9 @@ class ModelFactory:
             default_model = cls.get_default_model(tenant_id, ModelType.SPEECH_TO_TEXT)
 
             if not default_model:
-                raise LLMBadRequestError(f"Default model is not available. "
-                                         f"Please configure a Default Speech-to-Text Model "
-                                         f"in the Settings -> Model Provider.")
+                raise LLMBadRequestError(
+                    'Default model is not available. Please configure a Default Speech-to-Text Model in the Settings -> Model Provider.'
+                )
 
             model_provider_name = default_model.provider_name
             model_name = default_model.model_name
@@ -253,7 +253,7 @@ class ModelFactory:
         """
         # get default model
         default_model = db.session.query(TenantDefaultModel) \
-            .filter(
+                .filter(
             TenantDefaultModel.tenant_id == tenant_id,
             TenantDefaultModel.model_type == model_type.value
         ).first()
@@ -265,8 +265,9 @@ class ModelFactory:
                 if not model_provider:
                     continue
 
-                model_list = model_provider.get_supported_model_list(model_type)
-                if model_list:
+                if model_list := model_provider.get_supported_model_list(
+                    model_type
+                ):
                     model_info = model_list[0]
                     default_model = TenantDefaultModel(
                         tenant_id=tenant_id,
@@ -311,7 +312,7 @@ class ModelFactory:
 
         # get default model
         default_model = db.session.query(TenantDefaultModel) \
-            .filter(
+                .filter(
             TenantDefaultModel.tenant_id == tenant_id,
             TenantDefaultModel.model_type == model_type.value
         ).first()
@@ -320,7 +321,6 @@ class ModelFactory:
             # update default model
             default_model.provider_name = provider_name
             default_model.model_name = model_name
-            db.session.commit()
         else:
             # create default model
             default_model = TenantDefaultModel(
@@ -330,6 +330,5 @@ class ModelFactory:
                 model_name=model_name,
             )
             db.session.add(default_model)
-            db.session.commit()
-
+        db.session.commit()
         return default_model

@@ -650,14 +650,13 @@ class Qdrant(VectorStore):
 
         )
         results = response[0]
-        documents = []
-        for result in results:
-            if result:
-                documents.append(self._document_from_scored_point(
-                        result, self.content_payload_key, self.metadata_payload_key
-                    ))
-
-        return documents
+        return [
+            self._document_from_scored_point(
+                result, self.content_payload_key, self.metadata_payload_key
+            )
+            for result in results
+            if result
+        ]
 
     @sync_call_fallback
     async def asimilarity_search_with_score_by_vector(
@@ -1434,11 +1433,9 @@ class Qdrant(VectorStore):
             path=path,
             **kwargs,
         )
-        all_collection_name = []
         collections_response = client.get_collections()
         collection_list = collections_response.collections
-        for collection in collection_list:
-            all_collection_name.append(collection.name)
+        all_collection_name = [collection.name for collection in collection_list]
         if collection_name not in all_collection_name:
             vectors_config = rest.VectorParams(
                 size=vector_size,
@@ -1487,7 +1484,7 @@ class Qdrant(VectorStore):
             current_vector_config = current_vector_config.get(
                 vector_name
             )  # type: ignore[assignment]
-        elif isinstance(current_vector_config, dict) and vector_name is None:
+        elif isinstance(current_vector_config, dict):
             raise QdrantException(
                 f"Existing Qdrant collection {collection_name} uses named vectors. "
                 f"If you want to reuse it, please set `vector_name` to any of the "
@@ -1496,9 +1493,7 @@ class Qdrant(VectorStore):
                 f"If you want to recreate the collection, set `force_recreate` "
                 f"parameter to `True`."
             )
-        elif (
-                not isinstance(current_vector_config, dict) and vector_name is not None
-        ):
+        elif vector_name is not None:
             raise QdrantException(
                 f"Existing Qdrant collection {collection_name} doesn't use named "
                 f"vectors. If you want to reuse it, please set `vector_name` to "
@@ -1528,7 +1523,7 @@ class Qdrant(VectorStore):
                 f"recreate the collection, set `force_recreate` parameter to "
                 f"`True`."
             )
-        qdrant = cls(
+        return cls(
             client=client,
             collection_name=collection_name,
             embeddings=embedding,
@@ -1538,9 +1533,8 @@ class Qdrant(VectorStore):
             vector_name=vector_name,
             group_id=group_id,
             group_payload_key=group_payload_key,
-            is_new_collection=is_new_collection
+            is_new_collection=is_new_collection,
         )
-        return qdrant
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -1694,11 +1688,10 @@ class Qdrant(VectorStore):
         """
         if self.embeddings is not None:
             embedding = self.embeddings.embed_query(query)
+        elif self._embeddings_function is None:
+            raise ValueError("Neither of embeddings or embedding_function is set")
         else:
-            if self._embeddings_function is not None:
-                embedding = self._embeddings_function(query)
-            else:
-                raise ValueError("Neither of embeddings or embedding_function is set")
+            embedding = self._embeddings_function(query)
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
     def _embed_texts(self, texts: Iterable[str]) -> List[List[float]]:

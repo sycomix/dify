@@ -80,24 +80,22 @@ class DatasetMultiRetrieverTool(BaseTool):
 
         hit_callback = DatasetIndexToolCallbackHandler(self.conversation_message_task)
         hit_callback.on_tool_end(all_documents)
-        document_score_list = {}
-        for item in all_documents:
-            document_score_list[item.metadata['doc_id']] = item.metadata['score']
-
-        document_context_list = []
+        document_score_list = {
+            item.metadata['doc_id']: item.metadata['score']
+            for item in all_documents
+        }
         index_node_ids = [document.metadata['doc_id'] for document in all_documents]
-        segments = DocumentSegment.query.filter(
+        if segments := DocumentSegment.query.filter(
             DocumentSegment.completed_at.isnot(None),
             DocumentSegment.status == 'completed',
             DocumentSegment.enabled == True,
-            DocumentSegment.index_node_id.in_(index_node_ids)
-        ).all()
-
-        if segments:
+            DocumentSegment.index_node_id.in_(index_node_ids),
+        ).all():
             index_node_id_to_position = {id: position for position, id in enumerate(index_node_ids)}
             sorted_segments = sorted(segments,
                                      key=lambda segment: index_node_id_to_position.get(segment.index_node_id,
                                                                                        float('inf')))
+            document_context_list = []
             for segment in sorted_segments:
                 if segment.answer:
                     document_context_list.append(f'question:{segment.content} answer:{segment.answer}')
@@ -105,8 +103,7 @@ class DatasetMultiRetrieverTool(BaseTool):
                     document_context_list.append(segment.content)
             if self.return_resource:
                 context_list = []
-                resource_number = 1
-                for segment in sorted_segments:
+                for resource_number, segment in enumerate(sorted_segments, start=1):
                     dataset = Dataset.query.filter_by(
                         id=segment.dataset_id
                     ).first()
@@ -132,15 +129,15 @@ class DatasetMultiRetrieverTool(BaseTool):
                             source['word_count'] = segment.word_count
                             source['segment_position'] = segment.position
                             source['index_node_hash'] = segment.index_node_hash
-                        if segment.answer:
-                            source['content'] = f'question:{segment.content} \nanswer:{segment.answer}'
-                        else:
-                            source['content'] = segment.content
+                        source['content'] = (
+                            f'question:{segment.content} \nanswer:{segment.answer}'
+                            if segment.answer
+                            else segment.content
+                        )
                         context_list.append(source)
-                    resource_number += 1
                 hit_callback.return_retriever_resource_info(context_list)
 
-            return str("\n".join(document_context_list))
+            return "\n".join(document_context_list)
 
     async def _arun(self, tool_input: str) -> str:
         raise NotImplementedError()
@@ -166,8 +163,9 @@ class DatasetMultiRetrieverTool(BaseTool):
                     )
                 )
 
-                documents = kw_table_index.search(query, search_kwargs={'k': self.top_k})
-                if documents:
+                if documents := kw_table_index.search(
+                    query, search_kwargs={'k': self.top_k}
+                ):
                     all_documents.extend(documents)
             else:
 
@@ -184,12 +182,14 @@ class DatasetMultiRetrieverTool(BaseTool):
 
                 embeddings = CacheEmbedding(embedding_model)
 
-                documents = []
-                threads = []
                 if self.top_k > 0:
+                    documents = []
+                    threads = []
                     # retrieval_model source with semantic
-                    if retrieval_model['search_method'] == 'semantic_search' or retrieval_model[
-                        'search_method'] == 'hybrid_search':
+                    if retrieval_model['search_method'] in [
+                        'semantic_search',
+                        'hybrid_search',
+                    ]:
                         embedding_thread = threading.Thread(target=RetrievalService.embedding_search, kwargs={
                             'flask_app': current_app._get_current_object(),
                             'dataset_id': str(dataset.id),
@@ -205,8 +205,10 @@ class DatasetMultiRetrieverTool(BaseTool):
                         embedding_thread.start()
 
                     # retrieval_model source with full text
-                    if retrieval_model['search_method'] == 'full_text_search' or retrieval_model[
-                        'search_method'] == 'hybrid_search':
+                    if retrieval_model['search_method'] in [
+                        'full_text_search',
+                        'hybrid_search',
+                    ]:
                         full_text_index_thread = threading.Thread(target=RetrievalService.full_text_index_search,
                                                                   kwargs={
                                                                       'flask_app': current_app._get_current_object(),

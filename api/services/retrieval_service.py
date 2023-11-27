@@ -36,19 +36,15 @@ class RetrievalService:
                 embeddings=embeddings
             )
 
-            documents = vector_index.search(
+            if documents := vector_index.search(
                 query,
                 search_type='similarity_score_threshold',
                 search_kwargs={
                     'k': top_k,
                     'score_threshold': score_threshold,
-                    'filter': {
-                        'group_id': [dataset.id]
-                    }
-                }
-            )
-
-            if documents:
+                    'filter': {'group_id': [dataset.id]},
+                },
+            ):
                 if reranking_model and search_method == 'semantic_search':
                     rerank = ModelFactory.get_reranking_model(
                         tenant_id=dataset.tenant_id,
@@ -74,12 +70,9 @@ class RetrievalService:
                 embeddings=embeddings
             )
 
-            documents = vector_index.search_by_full_text_index(
-                query,
-                search_type='similarity_score_threshold',
-                top_k=top_k
-            )
-            if documents:
+            if documents := vector_index.search_by_full_text_index(
+                query, search_type='similarity_score_threshold', top_k=top_k
+            ):
                 if reranking_model and search_method == 'full_text_search':
                     rerank = ModelFactory.get_reranking_model(
                         tenant_id=dataset.tenant_id,

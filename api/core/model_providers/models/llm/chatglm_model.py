@@ -26,7 +26,7 @@ class ChatGLMModel(BaseLLM):
         if provider_model_kwargs.get('max_length') is not None:
             extra_model_kwargs['max_length'] = provider_model_kwargs.get('max_length')
 
-        client = EnhanceChatOpenAI(
+        return EnhanceChatOpenAI(
             model_name=self.name,
             temperature=provider_model_kwargs.get('temperature'),
             max_tokens=provider_model_kwargs.get('max_tokens'),
@@ -35,10 +35,8 @@ class ChatGLMModel(BaseLLM):
             callbacks=self.callbacks,
             request_timeout=60,
             openai_api_key="1",
-            openai_api_base=self.credentials['api_base'] + '/v1'
+            openai_api_base=self.credentials['api_base'] + '/v1',
         )
-
-        return client
 
     def _run(self, messages: List[PromptMessage],
              stop: Optional[List[str]] = None,
@@ -63,7 +61,14 @@ class ChatGLMModel(BaseLLM):
         :return:
         """
         prompts = self._get_prompt_from_messages(messages)
-        return max(sum([self._client.get_num_tokens(get_buffer_string([m])) for m in prompts]) - len(prompts), 0)
+        return max(
+            sum(
+                self._client.get_num_tokens(get_buffer_string([m]))
+                for m in prompts
+            )
+            - len(prompts),
+            0,
+        )
 
     def get_currency(self):
         return 'RMB'
@@ -84,16 +89,16 @@ class ChatGLMModel(BaseLLM):
             return LLMBadRequestError(str(ex))
         elif isinstance(ex, openai.error.APIConnectionError):
             logging.warning("Failed to connect to ChatGLM API.")
-            return LLMAPIConnectionError(ex.__class__.__name__ + ":" + str(ex))
+            return LLMAPIConnectionError(f"{ex.__class__.__name__}:{str(ex)}")
         elif isinstance(ex, (openai.error.APIError, openai.error.ServiceUnavailableError, openai.error.Timeout)):
             logging.warning("ChatGLM service unavailable.")
-            return LLMAPIUnavailableError(ex.__class__.__name__ + ":" + str(ex))
+            return LLMAPIUnavailableError(f"{ex.__class__.__name__}:{str(ex)}")
         elif isinstance(ex, openai.error.RateLimitError):
             return LLMRateLimitError(str(ex))
         elif isinstance(ex, openai.error.AuthenticationError):
             return LLMAuthorizationError(str(ex))
         elif isinstance(ex, openai.error.OpenAIError):
-            return LLMBadRequestError(ex.__class__.__name__ + ":" + str(ex))
+            return LLMBadRequestError(f"{ex.__class__.__name__}:{str(ex)}")
         else:
             return ex
 

@@ -33,7 +33,7 @@ class CohereReranking(BaseReranking):
         results = self.client.rerank(query=query, documents=docs, model=self.name, top_n=top_k)
         rerank_documents = []
 
-        for idx, result in enumerate(results):
+        for result in results:
             # format document
             rerank_document = Document(
                 page_content=result.document['text'],
@@ -46,10 +46,11 @@ class CohereReranking(BaseReranking):
                 }
             )
             # score threshold check
-            if score_threshold is not None:
-                if result.relevance_score >= score_threshold:
-                    rerank_documents.append(rerank_document)
-            else:
+            if (
+                score_threshold is not None
+                and result.relevance_score >= score_threshold
+                or score_threshold is None
+            ):
                 rerank_documents.append(rerank_document)
         return rerank_documents
 
@@ -59,15 +60,15 @@ class CohereReranking(BaseReranking):
             return LLMBadRequestError(str(ex))
         elif isinstance(ex, openai.error.APIConnectionError):
             logging.warning("Failed to connect to OpenAI API.")
-            return LLMAPIConnectionError(ex.__class__.__name__ + ":" + str(ex))
+            return LLMAPIConnectionError(f"{ex.__class__.__name__}:{str(ex)}")
         elif isinstance(ex, (openai.error.APIError, openai.error.ServiceUnavailableError, openai.error.Timeout)):
             logging.warning("OpenAI service unavailable.")
-            return LLMAPIUnavailableError(ex.__class__.__name__ + ":" + str(ex))
+            return LLMAPIUnavailableError(f"{ex.__class__.__name__}:{str(ex)}")
         elif isinstance(ex, openai.error.RateLimitError):
             return LLMRateLimitError(str(ex))
         elif isinstance(ex, openai.error.AuthenticationError):
             return LLMAuthorizationError(str(ex))
         elif isinstance(ex, openai.error.OpenAIError):
-            return LLMBadRequestError(ex.__class__.__name__ + ":" + str(ex))
+            return LLMBadRequestError(f"{ex.__class__.__name__}:{str(ex)}")
         else:
             return ex

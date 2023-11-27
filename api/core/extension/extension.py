@@ -16,12 +16,10 @@ class Extension:
             self.__module_extensions[module.value] = module_class.scan_extensions()
 
     def module_extensions(self, module: str) -> list[ModuleExtension]:
-        module_extensions = self.__module_extensions.get(module)
-
-        if not module_extensions:
+        if module_extensions := self.__module_extensions.get(module):
+            return list(module_extensions.values())
+        else:
             raise ValueError(f"Extension Module {module} not found")
-
-        return list(module_extensions.values())
 
     def module_extension(self, module: ExtensionModule, extension_name: str) -> ModuleExtension:
         module_extensions = self.__module_extensions.get(module.value)
@@ -29,12 +27,10 @@ class Extension:
         if not module_extensions:
             raise ValueError(f"Extension Module {module} not found")
 
-        module_extension = module_extensions.get(extension_name)
-
-        if not module_extension:
+        if module_extension := module_extensions.get(extension_name):
+            return module_extension
+        else:
             raise ValueError(f"Extension {extension_name} not found")
-
-        return module_extension
 
     def extension_class(self, module: ExtensionModule, extension_name: str) -> type:
         module_extension = self.module_extension(module, extension_name)

@@ -35,8 +35,7 @@ class ReadOnlyConversationTokenDBBufferSharedMemory(BaseChatMemory):
 
         chat_messages: List[PromptMessage] = []
         for message in messages:
-            files = message.message_files
-            if files:
+            if files := message.message_files:
                 file_objs = message_file_parser.transform_message_files(
                     files, message.app_model_config
                 )
